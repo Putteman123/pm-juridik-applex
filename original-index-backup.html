@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1c1f66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PM Juridik – Beta</title>
+//fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=EB+Garamond:wght@400;700&display=swap" rel="stylesheet">
+<style>
+
+/* ════════════════════════════════════
+   RESET & VARIABLER
+════════════════════════════════════ */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
+:root {
+  --navy:      #1c1f66;
+  --navy2:     #2d3178;
+  --steel:     #334155;
+  --light:     #f8fafc;
+  --border:    #e2e8f0;
+  --muted:     #64748b;
+  --faint:     #94a3b8;
+  --red:       #dc2626;
+  --green:     #166534;
+  --greenbg:   #dcfce7;
+  --warn:      #92400e;
+  --warnbg:    #fef3c7;
+  --radius:    10px;
+  --shadow:    0 4px 16px rgba(0,0,0,0.08);
+}
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--light);
+  color: #1e293b;
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: 'EB Garamond', Georgia, serif; }
+button, input, textarea, select { font-family: inherit; font-size: inherit; }
+img { max-width: 100%; }
+a { color: var(--navy); text-decoration: none; }
+
+/* ════════════════════════════════════
+   LOADER
+════════════════════════════════════ */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--navy);
+  display: flex; align-items: center;
+  justify-content: center;
+  flex-direction: column; gap: 18px;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+#loader.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+.spinner {
+  width: 46px; height: 46px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loader p { color: rgba(255,255,255,0.8); font-size: 15px; }
+
+/* ════════════════════════════════════
+   TOAST NOTIFIERINGAR
+════════════════════════════════════ */
+#toasts {
+  position: fixed; bottom: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 8000; pointer-events: none;
+}
+.toast {
+  background: #1e293b; color: #fff;
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  display: flex; align-items: center; gap: 8px;
+  animation: toastin 0.3s ease;
+  max-width: 320px; pointer-events: all;
+}
+.toast.ok   { background: #166534; }
+.toast.err  { background: #dc2626; }
+.toast.warn { background: #92400e; }
+@keyframes toastin {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ════════════════════════════════════
+   LOGIN-SKÄRM
+════════════════════════════════════ */
+#loginScreen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--navy) 0%, #0f1340 100%);
+  display: flex; align-items: center;
+  justify-content: center; padding: 24px;
+}
+.lcard {
+  background: #fff; border-radius: 20px;
+  padding: 48px 40px; max-width: 420px; width: 100%;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.lcard .ico    { font-size: 60px; margin-bottom: 14px; display: block; }
+.lcard h1      { font-size: 32px; color: var(--navy); margin-bottom: 6px; }
+.lcard .sub    { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+.beta-tag {
+  display: inline-block;
+  background: var(--warnbg); color: var(--warn);
+  font-size: 11px; font-weight: 700;
+  padding: 3px 14px; border-radius: 20px;
+  letter-spacing: 1px; margin-bottom: 28px;
+}
+.gbtn {
+  width: 100%; padding: 15px 20px;
+  background: #fff; color: #1e293b;
+  border: 2px solid var(--border);
+  border-radius: 10px; font-size: 15px;
+  font-weight: 600; cursor: pointer;
+  display: flex; align-items: center;
+  justify-content: center; gap: 12px;
+  transition: all 0.2s; margin-bottom: 12px;
+}
+.gbtn:hover { border-color: var(--navy); background: #eff6ff; }
+.gbtn:active { transform: scale(0.98); }
+.gbtn svg { width: 22px; height: 22px; flex-shrink: 0; }
+.lnote {
+  color: var(--faint); font-size: 12px;
+  margin-top: 20px; line-height: 2;
+}
+
+/* ════════════════════════════════════
+   HEADER
+════════════════════════════════════ */
+#hdr {
+  background: #fff;
+  border-bottom: 2px solid var(--navy);
+  padding: 0 20px; height: 64px;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.hl { display: flex; align-items: center; gap: 12px; }
+#hdrLogo { height: 38px; object-fit: contain; display: none; }
+#hdrTitle { font-size: 20px; color: var(--navy); font-weight: 700; }
+.hr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--light); padding: 6px 12px;
+  border-radius: 20px; font-size: 13px;
+  color: var(--steel); border: 1px solid var(--border);
+}
+.av {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--navy); color: #fff;
+  display: flex; align-items: center;
+  justify-content: center;
+  font-weight: 700; font-size: 12px; flex-shrink: 0;
+}
+.atag {
+  background: var(--navy); color: #fff;
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 4px; font-weight: 700;
+}
+.hbtn {
+  padding: 8px 14px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff; color: var(--muted);
+  cursor: pointer; font-size: 13px;
+  transition: all 0.2s; white-space: nowrap;
+}
+.hbtn:hover { background: var(--light); border-color: var(--navy); color: var(--navy); }
+.hbtn:active { transform: scale(0.97); }
+
+/* ════════════════════════════════════
+   HUVUD-LAYOUT
+════════════════════════════════════ */
+#shell { display: none; }
+.layout {
+  display: grid;
+  grid-template-columns: 256px 1fr 360px;
+  min-height: calc(100vh - 64px);
+}
+
+/* ════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════ */
+.sb {
+  background: #fff;
+  border-right: 1px solid var(--border);
+  padding: 20px 12px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.sblabel {
+  font-size: 10px; font-weight: 700;
+  color: var(--faint); letter-spacing: 1.5px;
+  text-transform: uppercase; padding: 0 8px;
+  margin-bottom: 4px;
+}
+.ci {
+  padding: 11px 10px; border-radius: 8px;
+  cursor: pointer; border-left: 3px solid transparent;
+  transition: all 0.18s; margin-bottom: 3px;
+  user-select: none;
+}
+.ci:hover  { background: #f1f5f9; }
+.ci.active { background: #eff6ff; border-left-color: var(--navy); }
+.ci-name { font-weight: 600; font-size: 13px; color: #1e293b; line-height: 1.3; }
+.ci-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ci-tag  {
+  display: inline-block; font-size: 10px; font-weight: 600;
+  padding: 1px 7px; border-radius: 4px; margin-top: 3px;
+}
+.ci-tag.open        { background: var(--greenbg); color: var(--green); }
+.ci-tag.in_progress { background: var(--warnbg);  color: var(--warn); }
+.ci-tag.closed      { background: #f1f5f9; color: var(--muted); }
+.sbbtn {
+  width: 100%; padding: 11px;
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  color: #fff; border: none; border-radius: 8px;
+  cursor: pointer; font-weight: 600; font-size: 13px;
+  transition: opacity 0.2s;
+}
+.sbbtn:hover  { opacity: 0.88; }
+.sbbtn:active { transform: scale(0.98); }
+.sbbtn.sec {
+  background: #fff; color: var(--navy);
+  border: 1.5px solid var(--navy); margin-top: 6px;
+}
+.sbbtn.sec:hover { background: #eff6ff; }
+.empty {
+  text-align: center; padding: 32px 16px;
+  color: var(--faint);
+}
+.empty .eico { font-size: 40px; margin-bottom: 10px; }
+.empty p     { font-size: 13px; }
+
+/* ════════════════════════════════════
+   MAIN PANEL
+════════════════════════════════════ */
+.main {
+  background: var(--light);
+  padding: 24px; overflow-y: auto;
+}
+.tabs {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  background: #fff; border-radius: 10px; padding: 5px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.tbtn {
+  padding: 9px 14px; border: none; background: none;
+  cursor: pointer; font-weight: 600; color: var(--muted);
+  border-radius: 7px; transition: all 0.18s;
+  font-size: 13px; white-space: nowrap;
+}
+.tbtn.active           { background: var(--navy); color: #fff; }
+.tbtn:hover:not(.active) { background: var(--light); color: var(--navy); }
+.tpane        { display: none; }
+.tpane.active { display: block; }
+.phead {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 20px;
+  flex-wrap: wrap; gap: 10px;
+}
+.phead h2 { font-size: 22px; color: var(--navy); }
+
+/* ════════════════════════════════════
+   STATISTIK-KORT
+════════════════════════════════════ */
+.statsrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.statcard {
+  background: #fff; border-radius: 10px;
+  padding: 18px; border: 1px solid var(--border);
+  text-align: center; transition: var(--shadow);
+}
+.statcard:hover { box-shadow: var(--shadow); }
+.statnum {
+  font-size: 34px; font-weight: 700;
+  color: var(--navy); font-family: monospace;
+}
+.statlbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ════════════════════════════════════
+   UPLOAD ZON
+════════════════════════════════════ */
+.uzone {
+  border: 2.5px dashed var(--border);
+  border-radius: 14px; padding: 44px 24px;
+  text-align: center; cursor: pointer;
+  background: #fff; transition: all 0.25s;
+  margin-bottom:
+  20px;
+}
+.uzone:hover, .uzone.dragover {
+  border-color: var(--navy); background: #eff6ff;
+}
+.uzone .uico { font-size: 44px; margin-bottom: 12px; }
+.uzone .utxt { font-weight: 600; color: var(--steel); font-size: 15px; }
+.uzone .usub { color: var(--faint); font-size: 12px; margin-top: 6px; }
+
+/* ════════════════════════════════════
+   DOKUMENT-GRID
+════════════════════════════════════ */
+.dgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 14px; margin-top: 16px;
+}
+.dcard {
+  background: #fff; border-radius: 10px;
+  padding: 16px; border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.dcard:hover { box-shadow: var(--shadow); border-color: var(--navy); }
+.dico  { font-size: 34px; margin-bottom: 8px; }
+.dname { font-weight: 600; font-size: 12px; color: #1e293b; word-break: break-word; }
+.dmeta { font-size: 11px; color: var(--faint); margin-top: 4px; }
+.dbtns { display: flex; gap: 5px; margin-top: 10px; justify-content: center; flex-wrap: wrap; }
+.dbtn {
+  padding: 4px 9px; font-size: 11px; border-radius: 5px;
+  border: 1px solid var(--border); background: var(--light);
+  color: var(--muted); cursor: pointer; transition: all 0.2s;
+}
+.dbtn:hover     { border-color: var(--navy); color: var(--navy); }
+.dbtn.del:hover { border-color: var(--red);  color: var(--red); }
+
+/* ════════════════════════════════════
+   MALLAR
+════════════════════════════════════ */
+.tgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+  gap: 16px;
+}
+.tcard {
+  background: #fff; border-radius: 12px;
+  padding: 20px; border: 1px solid var(--border); transition: all 0.2s;
+}
+.tcard:hover { box-shadow: var(--shadow); }
+.ttop {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; margin-bottom: 12px; gap: 10px;
+}
+.tlogo  { max-height: 34px; max-width: 90px; object-fit: contain; }
+.ttoggle {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--muted);
+  cursor: pointer; user-select: none; flex-shrink: 0;
+}
+.ttitle   { font-size: 16px; color: var(--navy); margin-bottom: 8px; }
+.tpreview {
+  font-size: 11px; color: var(--muted); line-height: 1.7;
+  border-top: 1px solid var(--border); padding-top: 10px;
+}
+.tbtngen {
+  width: 100%; margin-top: 14px; padding: 10px;
+  background: var(--navy); color: #fff; border: none;
+  border-radius: 8px; cursor: pointer; font-size: 13px;
+  font-weight: 600; transition: opacity 0.2s;
+}
+.tbtngen:hover  { opacity: 0.88; }
+.tbtngen:active { transform: scale(0.98); }
+
+/* ════════════════════════════════════
+   DIKTAFON / RECORDER
+════════════════════════════════════ */
+.rcard {
+  background: #fff; border-radius: 16px; padding: 32px;
+  text-align: center; border: 1px solid var(--border); margin-bottom: 24px;
+}
+.rcard h3    { font-size: 20px; color: var(--navy); margin-bottom: 4px; }
+.rcard .sub  { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+.rtimer      { font-size: 44px; font-family: monospace; font-weight: 700; color: var(--navy); margin: 10px 0; }
+.rstatus     { font-size: 13px; color: var(--muted); margin-bottom: 14px; min-height: 20px; }
+.rcontrols   { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 18px; }
+.rbtn {
+  width: 86px; height: 86px; border-radius: 50%; border: none;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #fff; font-size: 28px; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(220,38,38,0.4);
+  transition: all 0.3s;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rbtn:hover     { transform: scale(1.06); }
+.rbtn:active    { transform: scale(0.96); }
+.rbtn.recording { animation: pulse 1.2s infinite; }
+.rbtn.pause {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  box-shadow: 0 6px 20px rgba(245,158,11,0.4);
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(220,38,38,0.6); }
+  70%  { box-shadow: 0 0 0 20px rgba(220,38,38,0); }
+  100% { box-shadow: 0 0 0 0   rgba(220,38,38,0); }
+}
+.rtranscript {
+  background: var(--light); border-radius: 10px; padding: 16px;
+  min-height: 120px; text-align: left; font-size: 13px;
+  color: var(--steel); line-height: 1.7;
+  border: 1px solid var(--border); white-space: pre-wrap; margin-top: 16px;
+}
+.raction {
+  display: flex; gap: 10px; margin-top: 14px;
+  justify-content: center; flex-wrap: wrap;
+}
+.rabtn {
+  padding: 10px 18px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: #fff;
+  color: var(--steel); cursor: pointer; font-size: 13px;
+  font-weight: 600; transition: all 0.2s;
+}
+.rabtn:hover      { border-color: var(--navy); color: var(--navy); }
+.rabtn.pri        { background: var(--navy); color: #fff; border-color: var(--navy); }
+.rabtn.pri:hover  { opacity: 0.88; }
+.rabtn:active     { transform: scale(0.97); }
+
+/* TALAR-MODAL */
+.speaker-segment {
+  background: var(--light); border-radius: 10px;
+  padding: 14px; margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.speaker-label {
+  font-weight: 700; color: var(--navy);
+  font-size: 13px; margin-bottom: 6px;
+}
+.speaker-quote {
+  font-size: 12px; color: var(--muted);
+  font-style: italic; margin-bottom: 10px;
+  line-height: 1.5;
+}
+.speaker-inputs {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.speaker-inputs input,
+.speaker-inputs select {
+  flex: 1; min-width: 120px; padding: 8px 10px;
+  border: 1.5px solid var(--border); border-radius: 7px;
+  font-size: 13px; transition: border 0.2s;
+}
+.speaker-inputs input:focus,
+.speaker-inputs select:focus {
+  outline: none; border-color: var(--navy);
+}
+.confidence-bar {
+  height: 4px; background: var(--border);
+  border-radius: 2px; margin-top: 8px; overflow: hidden;
+}
+.confidence-fill {
+  height: 100%; background: var(--navy);
+  border-radius: 2px; transition: width 0.5s;
+}
+
+/* ════════════════════════════════════
+   SCANNER
+════════════════════════════════════ */
+.scancard {
+  background: #fff; border-radius: 16px; padding: 28px;
+  border: 1px solid var(--border); margin-bottom: 24px;
+}
+.scancard h3   { font-size: 20px; color: var(--navy); margin-bottom: 4px; }
+.scancard .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+#camPreview {
+  width: 100%; border-radius: 10px; background: #000;
+  display: none; max-height: 300px; object-fit: cover;
+}
+#snapCanvas {
+  width: 100%; border-radius: 10px; display: none;
+  margin-top: 12px; border: 2px solid var(--navy);
+}
+.scanbtns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.scanbtn {
+  padding: 11px 20px; border-radius: 8px;
+  background: var(--navy); color: #fff; border: none;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.scanbtn:hover  { opacity: 0.88; }
+.scanbtn:active { transform: scale(0.97); }
+.scanbtn.sec {
+  background: #fff; color: var(--navy);
+  border: 1.5px solid var(--navy);
+}
+.scanbtn.sec:hover { background: #eff6ff; }
+.ocrbox {
+  background: var(--light); border-radius: 10px; padding: 16px;
+  min-height: 100px; font-size: 13px; color: var(--steel);
+  line-height: 1.7; border: 1px solid var(--border);
+  margin-top: 14px; white-space: pre-wrap;
+}
+
+/* ════════════════════════════════════
+   PÅMINNELSER
+════════════════════════════════════ */
+.remcard {
+  background: #fff; border-radius: 10px; padding: 16px;
+  border: 1px solid var(--border); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 14px; transition: all 0.2s;
+}
+.remcard:hover   { box-shadow: var(--shadow); }
+.remico          { font-size: 28px; flex-shrink: 0; }
+.reminfo         { flex: 1; }
+.remtitle        { font-weight: 600; font-size: 14px; color: #1e293b; }
+.remdate         { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.remtag {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; margin-top: 4px;
+}
+.remtag.hög    { background: #fee2e2; color: #991b1b; }
+.remtag.medel  { background: var(--warnbg); color: var(--warn); }
+.remtag.låg    { background: var(--greenbg); color: var(--green); }
+.remdel {
+  padding: 6px 12px; border-radius: 6px;
+  border: 1px solid var(--border); background: #fff;
+  color: var(--muted); cursor: pointer; font-size: 12px;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.remdel:hover { border-color: var(--red); color: var(--red); }
+
+/* ════════════════════════════════════
+   BYRÅ-INSTÄLLNINGAR
+════════════════════════════════════ */
+.bcard {
+  background: #fff; border-radius: 12px; padding: 24px;
+  border: 1px solid var(--border); margin-bottom: 20px;
+}
+.bcard h3 { font-size: 18px; color: var(--navy); margin-bottom: 16px; }
+.logodrop {
+  border: 2.5px dashed var(--border); border-radius: 10px;
+  padding: 28px; text-align: center; cursor: pointer;
+  transition: all 0.25s; margin-bottom: 16px;
+}
+.logodrop:hover { border-color: var(--navy); background: #eff6ff; }
+#logoPreview {
+  max-width: 180px; max-height: 70px;
+  object-fit: contain; display: none; margin: 0 auto 10px;
+}
+.finput {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 14px; transition: border 0.2s; margin-bottom: 12px;
+  background: #fff;
+}
+.finput:focus  { outline: none; border-color: var(--navy); }
+.finput:disabled { background: var(--light); color: var(--muted); }
+.savebtn {
+  padding: 12px 28px; background: var(--navy); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-weight: 600; font-size: 14px; transition: opacity 0.2s;
+}
+.savebtn:hover  { opacity: 0.88; }
+.savebtn:active { transform: scale(0.98); }
+
+/* ════════════════════════════════════
+   AI-PANEL
+════════════════════════════════════ */
+.aipanel {
+  background: #fff; border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  height: calc(100vh - 64px);
+  position: sticky; top: 64px; overflow: hidden;
+}
+.aihead {
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  color: #fff; padding: 18px 20px; flex-shrink: 0;
+}
+.aihead h3    { font-size: 17px; margin-bottom: 2px; }
+.aihead p     { font-size: 12px; opacity: 0.85; }
+.aicase       { font-size: 11px; opacity: 0.7; margin-top: 4px; font-style: italic; }
+.aimsg {
+  flex: 1; overflow-y: auto; padding: 16px;
+  background: #f8fafc;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.msg {
+  padding: 12px 14px; border-radius: 12px;
+  font-size: 13px; line-height: 1.6; max-width: 94%;
+}
+.msg.ai       { background: #fff; border: 1px solid var(--border); color: #1e293b; align-self: flex-start; }
+.msg.user     { background: var(--navy); color: #fff; align-self: flex-end; }
+.msg.thinking { background: #fff; border: 1px solid var(--border); color: var(--muted); font-style: italic; align-self: flex-start; }
+.aisugg {
+  padding: 10px 14px; background: #f1f5f9;
+  border-top: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0;
+}
+.sqbtn {
+  padding: 6px 11px; background: #fff;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: 12px; cursor: pointer; transition: all 0.2s;
+  font-weight: 600; color: var(--steel);
+}
+.sqbtn:hover  { border-color: var(--navy); color: var(--navy); background: #eff6ff; }
+.sqbtn:active { transform: scale(0.96); }
+.aiinput {
+  padding: 12px 14px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; flex-shrink: 0; background: #fff;
+}
+.aiinput input {
+  flex: 1; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; transition: border 0.2s;
+}
+.aiinput input:focus { outline: none; border-color: var(--navy); }
+.sendbt {
+  padding: 10px 16px; background: var(--navy); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 600; transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.sendbt:hover  { opacity: 0.88; }
+.sendbt:active { transform: scale(0.97); }
+
+/* ════════════════════════════════════
+   MODALS
+════════════════════════════════════ */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex; align-items: center;
+  justify-content: center; padding: 20px;
+  backdrop-filter: blur(2px);
+}
+.modal {
+  background: #fff; border-radius: 16px; padding: 32px;
+  max-width: 540px; width: 100%;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.2);
+  position: relative; max-height: 90vh; overflow-y: auto;
+}
+.modal h2       { font-size: 22px; color: var(--navy); margin-bottom: 20px; }
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none; font-size: 22px;
+  cursor: pointer; color: var(--muted); line-height: 1;
+  padding: 4px 8px; border-radius: 6px;
+}
+.modal-close:hover { background: var(--light); color: #1e293b; }
+.mrow             { margin-bottom: 14px; }
+.mrow label       { display: block; font-size: 13px; font-weight: 600; color: var(--steel); margin-bottom: 5px; }
+.mrow input,
+.mrow select,
+.mrow textarea    {
+  width: 100%; padding: 10px 14px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 14px; transition: border 0.2s; background: #fff;
+}
+.mrow input:focus,
+.mrow select:focus,
+.mrow textarea:focus { outline: none; border-color: var(--navy); }
+.mbtns { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+.mbtn {
+  padding: 10px 24px; border-radius: 8px; border: none;
+  cursor: pointer; font-size: 14px; font-weight: 600;
+  transition: all 0.2s;
+}
+.mbtn.pri       { background: var(--navy); color: #fff; }
+.mbtn.pri:hover { opacity: 0.88; }
+.mbtn.sec       { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+.mbtn.sec:hover { background: #eff6ff; }
+.mbtn:active    { transform: scale(0.97); }
+
+/* ════════════════════════════════════
+   AKTIVITETSFLÖDE
+════════════════════════════════════ */
+.actitem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: #fff;
+  font-size: 13px; color: var(--steel);
+}
+.actitem .actico { font-size: 20px; flex-shrink: 0; }
+.actitem .acttext { flex: 1; }
+.actitem .acttime { font-size: 11px; color: var(--faint); flex-shrink: 0; }
+
+/* ════════════════════════════════════
+   RESPONSIV DESIGN
+════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .layout { grid-template-columns: 220px 1fr; }
+  .aipanel { display: none; }
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sb { display: none; }
+  .hbtn.hide-mobile { display: none; }
+}
+@media (max-width: 600px) {
+  #hdr { padding: 0 12px; }
+  #hdrTitle { font-size: 16px; }
+  .lcard { padding: 32px 20px; }
+  .main { padding: 16px; }
+  .rcard { padding: 20px; }
+  .scancard { padding: 18px; }
+  .statsrow { grid-template-columns: repeat(2, 1fr); }
+  .chip .uname { display: none; }
+  .atag
+{ display: none; }
+}
+
+/* ════════════════════════════════════
+   PRINT
+════════════════════════════════════ */
+@media print {
+  #hdr, .sb, .aipanel, .tabs, #toasts, #loader { display: none !important; }
+  .main { padding: 0; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ════════════ LOADER ════════════ -->
+<div id="loader">
+  <div class="spinner"></div>
+  <p>Laddar PM Juridik…</p>
+</div>
+
+<!-- ════════════ TOASTS ════════════ -->
+<div id="toasts"></div>
+
+<!-- ════════════ LOGIN ════════════ -->
+<div id="loginScreen" style="display:none">
+  <div class="lcard">
+    <span class="ico">⚖️</span>
+    <h1>PM Juridik</h1>
+    <p class="sub">Juridisk AI-plattform</p>
+    <div class="beta-tag">BETA v0.9</div>
+    <br>
+    <button class="gbtn" id="loginBtn">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Logga in med Google Workspace
+    </button>
+    <p class="lnote">
+      Admin: patrick@mellberg.online<br>
+      Nya jurister registreras automatiskt<br>
+      <strong>Beta – endast inbjudna användare</strong>
+    </p>
+  </div>
+</div>
+
+<!-- ════════════ APP SHELL ════════════ -->
+<div id="shell">
+
+  <!-- HEADER -->
+  <div id="hdr">
+    <div class="hl">
+      <img id="hdrLogo" src="" alt="Logo">
+      <span id="hdrTitle">PM Juridik</span>
+    </div>
+    <div class="hr">
+      <div class="chip">
+        <div class="av" id="avInit">PJ</div>
+        <span class="uname" id="uName">Laddar…</span>
+        <span class="atag" id="adminTag" style="display:none">ADMIN</span>
+      </div>
+      <button class="hbtn" onclick="window.openModal('settingsModal')">⚙️ Inställningar</button>
+      <button class="hbtn" id="logoutBtn">🚪 Logga ut</button>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    <div class="sb">
+      <div>
+        <div class="sblabel">Mina fall</div>
+        <div id="caseList">
+          <div class="empty">
+            <div class="eico">📁</div>
+            <p>Inga fall ännu</p>
+          </div>
+        </div>
+        <button class="sbbtn" onclick="window.openModal('newCaseModal')">+ Nytt fall</button>
+        <button class="sbbtn sec" onclick="window.openModal('newReminderModal')">🔔 Ny påminnelse</button>
+      </div>
+      <div>
+        <div class="sblabel">Statistik</div>
+        <div id="sbStats" style="font-size:12px;color:var(--muted);padding:0 8px;line-height:2.2">
+          Laddar…
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ MAIN ══════ -->
+    <div class="main">
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tbtn active" onclick="window.showTab('overview', this)">📊 Översikt</button>
+        <button class="tbtn" onclick="window.showTab('documents', this)">📄 Dokument</button>
+        <button class="tbtn" onclick="window.showTab('templates', this)">📋 Mallar</button>
+        <button class="tbtn" onclick="window.showTab('recorder', this)">🎙️ Diktafon</button>
+        <button class="tbtn" onclick="window.showTab('scanner', this)">📷 Scanner</button>
+        <button class="tbtn" onclick="window.showTab('reminders', this)">🔔 Påminnelser</button>
+        <button class="tbtn" onclick="window.showTab('bureau', this)">🏢 Byrå</button>
+      </div>
+
+      <!-- ── ÖVERSIKT ── -->
+      <div class="tpane active" id="pane-overview">
+        <div class="phead"><h2>📊 Översikt</h2></div>
+        <div class="statsrow">
+          <div class="statcard"><div class="statnum" id="st-cases">0</div><div class="statlbl">Aktiva fall</div></div>
+          <div class="statcard"><div class="statnum" id="st-docs">0</div><div class="statlbl">Dokument</div></div>
+          <div class="statcard"><div class="statnum" id="st-rem">0</div><div class="statlbl">Påminnelser</div></div>
+          <div class="statcard"><div class="statnum" id="st-trans">0</div><div class="statlbl">Transkriptioner</div></div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:20px;border:1px solid var(--border)">
+          <h3 style="font-size:18px;color:var(--navy);margin-bottom:14px">Senaste aktivitet</h3>
+          <div id="activityFeed" style="display:flex;flex-direction:column;gap:10px">
+            <div class="empty"><div class="eico">📋</div><p>Ingen aktivitet ännu</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DOKUMENT ── -->
+      <div class="tpane" id="pane-documents">
+        <div class="phead">
+          <h2>📄 Dokument</h2>
+          <span id="activeCaseName" style="font-size:13px;color:var(--muted);background:var(--light);padding:6px 12px;border-radius:6px;border:1px solid var(--border)">
+            Välj ett fall i sidopanelen
+          </span>
+        </div>
+        <div class="uzone" id="dropZone">
+          <div class="uico">📁</div>
+          <div class="utxt">Dra hit eller klicka för att ladda upp</div>
+          <div class="usub">PDF, DOCX, DOC, TXT, JPG, PNG • Max 25 MB</div>
+          <input type="file" id="fileInput" multiple
+            accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png"
+            style="display:none">
+        </div>
+        <div class="dgrid" id="docGrid">
+          <div class="empty" style="grid-column:1/-1">
+            <div class="eico">📂</div>
+            <p>Välj ett fall och ladda upp dokument</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MALLAR ── -->
+      <div class="tpane" id="pane-templates">
+        <div class="phead"><h2>📋 Dokumentmallar</h2></div>
+        <div class="tgrid">
+
+          <div class="tcard">
+            <div class="ttop">
+              <img class="tlogo tpl-logo" src="" style="display:none" alt="">
+              abel class="ttoggle">
+                <input type="checkbox" class="logo-chk" checked onchange="window.toggleTemplateLogos()">
+                Visa logo
+              </label>
+            </div>
+            <div class="ttitle">⚖️ Stämningsansökan</div>
+            <div class="tpreview">
+              Till Tingsrätten<br>Kärande: [Namn]<br>
+              Svarande: [Namn]<br>Yrkande: [Belopp]<br>
+              Grunder: [Beskrivning]<br>Bevisning: [Bilagor]
+            </div>
+            <button class="tbtngen" onclick="window.generateTemplate('stamning')">📄 Generera dokument</button>
+          </div>
+
+          <div class="tcard">
+            <div class="ttop">
+              <img class="tlogo tpl-logo" src="" style="display:none" alt="">
+              abel class="ttoggle">
+                <input type="checkbox" class="logo-chk" checked onchange="window.toggleTemplateLogos()">
+                Visa logo
+              </label>
+            </div>
+            <div class="ttitle">📝 Yttrande</div>
+            <div class="tpreview">
+              Till Domstolen<br>Mål nr: [Målnummer]<br>
+              Datum: [Datum]<br>1. [Punkt 1]<br>
+              2. [Punkt 2]<br>Yrkande: [Yrkande]
+            </div>
+            <button class="tbtngen" onclick="window.generateTemplate('yttrande')">📄 Generera dokument</button>
+          </div>
+
+          <div class="tcard">
+            <div class="ttop">
+              <img class="tlogo tpl-logo" src="" style="display:none" alt="">
+              abel class="ttoggle">
+                <input type="checkbox" class="logo-chk" checked onchange="window.toggleTemplateLogos()">
+                Visa logo
+              </label>
+            </div>
+            <div class="ttitle">📜 Fullmakt</div>
+            <div class="tpreview">
+              Fullmaktsgivare: [Namn, PNR]<br>
+              Fullmaktshavare: [Jurist]<br>
+              Byrå: [Byrånamn]<br>Uppdrag: Att företräda mig<br>
+              i mål nr: [Målnummer]<br>Underskrift: ___________
+            </div>
+            <button class="tbtngen" onclick="window.generateTemplate('fullmakt')">📄 Generera dokument</button>
+          </div>
+
+          <div class="tcard">
+            <div class="ttop">
+              <img class="tlogo tpl-logo" src="" style="display:none" alt="">
+              abel class="ttoggle">
+                <input type="checkbox" class="logo-chk" checked onchange="window.toggleTemplateLogos()">
+                Visa logo
+              </label>
+            </div>
+            <div class="ttitle">💰 Kostnadsräkning</div>
+            <div class="tpreview">
+              Mål nr: [Målnummer]<br>
+              Ombudsarvode: [Timmar × Rate]<br>
+              Utlägg: [Beskrivning]<br>Moms 25%: [Belopp]<br>
+              Totalt: [Summa]<br>Bankgiro: [Nr]
+            </div>
+            <button class="tbtngen" onclick="window.generateTemplate('kostnad')">📄 Generera dokument</button>
+          </div>
+
+          <div class="tcard">
+            <div class="ttop">
+              <img class="tlogo tpl-logo" src="" style="display:none" alt="">
+              abel class="ttoggle">
+                <input type="checkbox" class="logo-chk" checked onchange="window.toggleTemplateLogos()">
+                Visa logo
+              </label>
+            </div>
+            <div class="ttitle">✉️ Svarsskrivelse</div>
+            <div class="tpreview">
+              Till: [Motpart/Domstol]<br>Angående: [Ärende]<br>
+              Datum: [Datum]<br>Med anledning av er skrivelse<br>
+              daterad [datum] får vi anföra:<br>[Innehåll]
+            </div>
+            <button class="tbtngen" onclick="window.generateTemplate('svar')">📄 Generera dokument</button>
+          </div>
+
+          <div class="tcard">
+            <div class="ttop">
+              <img class="tlogo tpl-logo" src="" style="display:none" alt="">
+              abel class="ttoggle">
+                <input type="checkbox" class="logo-chk" checked onchange="window.toggleTemplateLogos()">
+                Visa logo
+              </label>
+            </div>
+            <div class="ttitle">🏛️ Överklagan</div>
+            <div class="tpreview">
+              Till Hovrätten<br>Klagande: [Namn]<br>
+              Motpart: [Namn]<br>Överklagas: [Dom/Beslut]<br>
+              Yrkande: Att hovrätten ändrar<br>[Grunder]
+            </div>
+            <button class="tbtngen" onclick="window.generateTemplate('overklagan')">📄 Generera dokument</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── DIKTAFON ── -->
+      <div class="tpane" id="pane-recorder">
+        <div class="phead"><h
+2>🎙️ Diktafon & Transkribering</h2></div>
+        <div class="rcard">
+          <h3>Spela in samtal</h3>
+          <p class="sub">AI transkriberar automatiskt och identifierar talare</p>
+          <div class="rtimer" id="recTimer">00:00</div>
+          <div class="rstatus" id="recStatus">Redo att spela in</div>
+          <div class="rcontrols">
+            <button class="rbtn" id="recBtn" onclick="window.toggleRecording()">🎙️</button>
+            <button class="rbtn pause" id="pauseBtn" onclick="window.togglePause()" style="display:none">⏸️</button>
+          </div>
+          <div class="rtranscript" id="liveTranscript">Transkribering visas här under inspelning…</div>
+          <div class="raction" id="recActions" style="display:none">
+            <button class="rabtn" onclick="window.copyTranscript()">📋 Kopiera</button>
+            <button class="rabtn pri" onclick="window.identifySpeakersUI()">👥 Identifiera talare</button>
+            <button class="rabtn pri" onclick="window.saveTranscriptToFirestore()">💾 Spara transkript</button>
+            <button class="rabtn" onclick="window.downloadTranscriptDocx()">⬇️ Ladda ner .docx</button>
+            <button class="rabtn" onclick="window.clearRecording()">🗑️ Rensa</button>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:20px;border:1px solid var(--border)">
+          <h3 style="font-size:18px;color:var(--navy);margin-bottom:14px">Sparade transkriptioner</h3>
+          <div id="transcriptList">
+            <div class="empty"><div class="eico">🎙️</div><p>Inga sparade transkriptioner</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCANNER ── -->
+      <div class="tpane" id="pane-scanner">
+        <div class="phead"><h2>📷 Dokumentscanner</h2></div>
+        <div class="scancard">
+          <h3>Kamera-scanner</h3>
+          <p class="sub">Fotografera dokument – text extraheras och läggs i akten</p>
+          <video id="camPreview" autoplay playsinline muted></video>
+          anvas id="snapCanvas"></canvas>
+          <div class="scanbtns">
+            <button class="scanbtn" id="startCamBtn" onclick="window.startCamera()">📷 Starta kamera</button>
+            <button class="scanbtn" id="snapBtn" onclick="window.takeSnapshot()" style="display:none">📸 Ta foto</button>
+            <button class="scanbtn sec" id="stopCamBtn" onclick="window.stopCamera()" style="display:none">⏹️ Stoppa</button>
+            <button class="scanbtn sec" onclick="document.getElementById('scanFileInput').click()">🖼️ Välj bild</button>
+            <input type="file" id="scanFileInput" accept="image/*" style="display:none" onchange="window.scanFromFile(event)">
+          </div>
+          <div class="ocrbox" id="ocrResult">Välj bild eller ta foto — text extraheras här automatiskt…</div>
+          <div class="raction" id="scanActions" style="display:none;margin-top:12px">
+            <button class="rabtn" onclick="window.copyOcr()">📋 Kopiera text</button>
+            <button class="rabtn pri" onclick="window.addOcrToCase()">📁 Lägg i akt</button>
+            <button class="rabtn pri" onclick="window.analyzeOcrWithGemini()">🤖 Analysera med AI</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PÅMINNELSER ── -->
+      <div class="tpane" id="pane-reminders">
+        <div class="phead">
+          <h2>🔔 Påminnelser & Deadlines</h2>
+          <button class="sbbtn" style="width:auto;padding:10px 20px"
+            onclick="window.openModal('newReminderModal')">+ Ny påminnelse</button>
+        </div>
+        <div id="reminderList">
+          <div class="empty"><div class="eico">🔔</div><p>Inga påminnelser ännu</p></div>
+        </div>
+      </div>
+
+      <!-- ── BYRÅ ── -->
+      <div class="tpane" id="pane-bureau">
+        <div class="phead"><h2>🏢 Byråinställningar</h2></div>
+        <div class="bcard">
+          <h3>Logotyp & Byrånamn</h3>
+          <div class="logodrop" id="logoDrop" onclick="document.getElementById('logoInput').click()">
+            <img id="logoPreview" src="" alt="Logo">
+            <p id="logoDropText">📤 Klicka för att ladda upp logotyp<br>
+              <span style="font-size:12px;color:var(--faint)">PNG, JPG • Rekommenderat 400×160px</span>
+            </p>
+            <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="window.uploadLogo(event)">
+          </div>
+          <input class="finput" id="bureauNameInput" placeholder="Byrånamn (t.ex. PM Juridik)" type="text">
+          <input class="finput" id="bureauEmailInput" placeholder="Byråns e-post" type="email">
+          <input class="finput" id="bureauPhoneInput" placeholder="Telefonnummer" type="tel">
+          <input class="finput" id="bureauAddressInput" placeholder="Adress" type="text">
+          <input class="finput" id="bureauOrgInput" placeholder="Organisationsnummer" type="text">
+          <button class="savebtn" onclick="window.saveBureauSettings()">💾 Spara inställningar</button>
+        </div>
+        <div class="bcard">
+          <h3>Gemini Pro API</h3>
+          <input class="finput" id="geminiKeyInput" placeholder="AIzaSy… (din Gemini API-nyckel)" type="password">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+            Hämta nyckel: <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com →</a>
+          </p>
+          <button class="savebtn" onclick="window.saveGeminiKey()">💾 Spara API-nyckel</button>
+        </div>
+        <div class="bcard">
+          <h3>Beta-status</h3>
+          <div style="font-size:13px;color:var(--muted);line-height:2.2">
+            <div>✅ Firebase Auth — Google Workspace-inloggning</div>
+            <div>✅ Firestore — Fallhantering & dokument</div>
+            <div>✅ Firebase Storage — Fillagring</div>
+            <div>✅ Gemini Pro — AI-assistent</div>
+            <div>✅ Web Speech API — Realtidstranskribering</div>
+            <div>✅ Talar-identifiering — Minne per fall</div>
+            <div>✅ Kamera-scanner — OCR via AI</div>
+            <div>🔄 Google Docs export — Kommande</div>
+            <div>🔄 Push-notiser — Kommande</div>
+            <div style="margin-top:12px;color:var(--navy);font-weight:700">
+              Beta v0.9 — patrick@mellberg.online
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+
+    <!-- ══════ AI-PANEL ══════ -->
+    <div class="aipanel">
+      <div class="aihead">
+        <h3>🤖 Juridisk AI-assistent</h3>
+        <p>Powered by Gemini Pro</p>
+        <div class="aicase" id="aiCaseName">Inget fall valt</div>
+      </div>
+      <div class="aimsg" id="aiMessages">
+        <div class="msg ai">
+          👋 Välkommen till PM Juridik!<br><br>
+          Välj ett fall i sidopanelen och ställ en fråga, eller använd snabbknapparna nedan.
+        </div>
+      </div>
+      <div class="aisugg">
+        <button class="sqbtn" onclick="window.aiQuick('Vad är nästa steg i detta fall?')">➡️ Nästa steg</button>
+        <button class="sqbtn" onclick="window.aiQuick('Analysera senaste dokumentet')">📋 Analysera</button>
+        <button class="sqbtn" onclick="window.aiQuick('Vilka deadlines är viktiga?')">⏰ Deadlines</button>
+        <button class="sqbtn" onclick="window.aiQuick('Sammanfatta fallet kort')">📌 Sammanfatta</button>
+        <button class="sqbtn" onclick="window.aiQuick('Finns juridiska risker jag bör känna till?')">⚠️ Risker</button>
+        <button class="sqbtn" onclick="window.aiQuick('Föreslå lämplig mall för detta fall')">📄 Mall</button>
+      </div>
+      <div class="aiinput">
+        <input type="text" id="aiInput" placeholder="Skriv din fråga… (Enter skickar)"
+          onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); window.sendAI(); }">
+        <button class="sendbt" onclick="window.sendAI()">Skicka</button>
+      </div>
+    </div>
+
+  </div><!-- /layout -->
+</div><!-- /shell -->
+
+<!-- ════════════ MODALS ════════════ -->
+
+<!-- NYTT FALL -->
+<div class="modal-bg" id="newCaseModal" style="display:none"
+  onclick="if(event.target===this)window.closeModal('newCaseModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="window.closeModal('newCaseModal')">✕</button>
+    <h2>📁 Skapa nytt fall</h2>
+    <div class="mrow">abel>Fallnamn *</label>
+      <input id="nc-title" placeholder="t.ex. Svensson vs Andersson" type="text"></div>
+    <div class="mrow">abel>Typ av mål</label>
+      <select id="nc-type">
+        <option value="civil">Civilmål</option>
+        <option value="criminal">Brottmål</option>
+        <option value="administrative">Förvaltningsmål</option>
+        <option value="labor">Arbetsrättsmål</option>
+        <option value="family">Familjemål</option>
+        <option value="other">Övrigt</option>
+      </select></div>
+    <div class="mrow">abel>Domstol</label>
+      <input id="nc-court" placeholder="t.ex. Halmstads Tingsrätt" type="text"></div>
+    <div class="mrow">abel>Motpart</label>
+      <input id="nc-party" placeholder="Motpartens namn" type="text"></div>
+    <div class="mrow">abel>Målnummer</label>
+      <input id="nc-ref" placeholder="t.ex. T 1234-26" type="text"></div>
+    <div class="mrow">abel>Deadline</label>
+      <input id="nc-deadline" type="date"></div>
+    <div class="mrow">abel>Beskrivning</label>
+      <textarea id="nc-desc" rows="3" placeholder="Kort beskrivning…"></textarea></div>
+    <div class="mbtns">
+      <button class="mbtn sec" onclick="window.closeModal('newCaseModal')">Avbryt</button>
+      <button class="mbtn pri" onclick="window.createCase()">📁 Skapa fall</button>
+    </div>
+  </div>
+</div>
+
+<!-- NY PÅMINNELSE -->
+<div class="modal-bg" id="newReminderModal" style="display:none"
+  onclick="if(event.target===this)window.closeModal('newReminderModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="window.closeModal('newReminderModal')">✕</button>
+    <h2>🔔 Ny påminnelse</h2>
+    <div class="mrow">abel>Titel *</label>
+      <input id="nr-title" placeholder="t.ex. Inlämna yttrande" type="text"></div>
+    <div class="mrow">abel>Datum & tid *</label>
+      <input id="nr-date" type="datetime-local"></div>
+    <div class="mrow">abel>Prioritet</label>
+      <select id="nr-prio">
+        <option value="hög">🔴 Hög</option>
+        <option value="medel" selected>🟡 Medel</option>
+        <option value="låg">🟢 Låg</option>
+      </select></div>
+    <div class="mrow">abel>Kopplat till fall</label>
+      <select id="nr-case"><option value="">— Inget fall —</option></select></div>
+    <div class="mrow">abel>Anteckning</label>
+      <textarea id="nr-note" rows="2" placeholder="Valfri anteckning…"></textarea></div>
+    <div class="mbtns">
+      <button class="mbtn sec" onclick="window.closeModal('newReminderModal')">Avbryt</button>
+      <button class="mbtn pri" onclick="window.createReminder()">🔔 Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSTÄLLNINGAR -->
+<div class="modal-bg" id="settingsModal" style="display:none" onclick="if(event.target===this)window.closeModal('settingsModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="window.closeModal('settingsModal')">&#x2715;</button>
+    <h2>&#9881; Inställningar</h2>
+    <div class="mrow"><label>Byrånamn</label><input type="text" id="settingsBureauName" placeholder="Byråns namn"></div>
+    <div class="mrow"><label>Logotyp</label><input type="file" id="logoInput" accept="image/*"><img id="logoPreview" style="max-height:60px;margin-top:8px"></div>
+    <div class="mrow"><label>Gemini API-nyckel</label><input type="text" id="settingsGeminiKey" placeholder="AIza..."></div>
+    <button class="btn-primary" onclick="window.saveSettings()">Spara</button>
+  </div>
+</div>
+
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc, onSnapshot, orderBy } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJ7G8_f3kIRmZ0X0i4B0_3IwcBCmtIhZE",
+  authDomain: "pm-juridik-applex.firebaseapp.com",
+  projectId: "pm-juridik-applex",
+  storageBucket: "pm-juridik-applex.firebasestorage.app",
+  messagingSenderId: "361480860589",
+  appId: "1:361480860589:web:d6f9f3d679167a545aa724d"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let currentUser = null;
+const toast = (msg, t=3000) => {
+  const d = document.createElement('div');
+  d.textContent = msg;
+  d.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:8px;z-index:99999';
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), t);
+};
+const loader = (show) => document.getElementById('loader').style.display = show ? 'flex' : 'none';
+const openModal = (id) => document.getElementById(id).style.display = 'flex';
+const closeModal = (id) => document.getElementById(id).style.display = 'none';
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const provider = new GoogleAuthProvider();
+  try { await signInWithPopup(auth, provider); toast('Inloggad!'); }
+  catch(e) { toast('Inloggning misslyckades'); console.error(e); }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try { await signOut(auth); toast('Utloggad'); }
+  catch(e) { toast('Fel vid utloggning'); }
+});
+
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    document.getElementById('userEmail').textContent = user.email;
+    try {
+      await loadBureauSettings();
+      await loadCases();
+      await loadStats();
+      await loadReminders();
+    } catch(e) { console.error('Load error:', e); }
+    loader(false);
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+    loader(false);
+  }
+});
+
+async function loadBureauSettings() {
+  const q = query(collection(db, 'bureauSettings'), where('userId', '==', currentUser.uid));
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    const data = snap.docs[0].data();
+    if (data.bureauName) document.getElementById('bureauName').textContent = data.bureauName;
+    if (data.logoUrl) document.getElementById('bureauLogo').src = data.logoUrl;
+  }
+}
+
+async function loadCases() {
+  const q = query(collection(db, 'cases'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  const list = document.getElementById('casesList');
+  list.innerHTML = '';
+  snap.forEach(doc => {
+    const c = doc.data();
+    const div = document.createElement('div');
+    div.className = 'case-card';
+    div.innerHTML = `<h3>${c.caseNumber}</h3><p>${c.clientName}</p><span class="status-${c.status}">${c.status || 'pågående'}</span>`;
+    div.onclick = () => viewCase(doc.id);
+    list.appendChild(div);
+  });
+}
+
+async function loadStats() {
+  const q = query(collection(db, 'stats'), where('userId', '==', currentUser.uid));
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    const s = snap.docs[0].data();
+    document.getElementById('statTotal').textContent = s.totalCases || 0;
+    document.getElementById('statActive').textContent = s.activeCases || 0;
+    document.getElementById('statClosed').textContent = s.closedCases || 0;
+  }
+}
+
+async function loadReminders() {
+  const q = query(collection(db, 'reminders'), where('userId', '==', currentUser.uid), orderBy('date', 'asc'));
+  const snap = await getDocs(q);
+  const list = document.getElementById('remindersList');
+  list.innerHTML = '';
+  snap.forEach(doc => {
+    const r = doc.data();
+    const div = document.createElement('div');
+    div.className = 'reminder-item';
+    div.innerHTML = `<strong>${r.date}</strong>: ${r.text}`;
+    list.appendChild(div);
+  });
+}
+
+function viewCase(id) { toast('Visning av ärende: ' + id); }
+
+window.saveSettings = async () => {
+  const name = document.getElementById('settingsBureauName').value;
+  const key = document.getElementById('settingsGeminiKey').value;
+  try {
+    const q = query(collection(db, 'bureauSettings'), where('userId', '==', currentUser.uid));
+    const snap = await getDocs(q);
+    const data = { userId: currentUser.uid, bureauName: name, geminiKey: key, updatedAt: new Date() };
+    if (snap.empty) {
+      await addDoc(collection(db, 'bureauSettings'), { ...data, createdAt: new Date() });
+    } else {
+      await updateDoc(doc(db, 'bureauSettings', snap.docs[0].id), data);
+    }
+    toast('Inställningar sparade');
+    closeModal('settingsModal');
+    await loadBureauSettings();
+  } catch(e) { toast('Fel vid sparande'); console.error(e); }
+};
+</script>
+</body>
+</html>
+
