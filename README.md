@@ -31,6 +31,10 @@ firebase login
 firebase deploy --only hosting
 ```
 
+### GitHub Actions (automatic deploy)
+- Workflow: `.github/workflows/deploy.yml` deploys to Firebase Hosting on pushes to `main` (or when triggered manually).
+- Required secret: `FIREBASE_SERVICE_ACCOUNT_PM_JURIDIK_APPLEX` containing a Firebase service account JSON with Hosting deploy permissions. The default `GITHUB_TOKEN` is used for repo access.
+
 ## Struktur
 
 ```
