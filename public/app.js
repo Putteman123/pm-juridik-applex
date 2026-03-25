@@ -10,7 +10,7 @@ import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } fr
 
 // ── Firebase Config ──
 const firebaseConfig = {
-  apiKey: "AIzaSyDJ7G8_f3kIRmZ0X0i4B0_3IwcBCmtIhZE",
+    apiKey: "AIzaSyDxl2Fjssmv5OOjh2owpg_YTjXelMQGTYE",
   authDomain: "pm-juridik-applex.firebaseapp.com",
   projectId: "pm-juridik-applex",
   storageBucket: "pm-juridik-applex.firebasestorage.app",
